@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Dashboard</title>
+  <link rel="stylesheet" href="inventory.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>StockPilotERP</h2>
+    <ul>
+      <li><a href="index.html">🏭 Dashboard</a></li>
+      <li><a href="inventory.html">📦 Inventory</a></li>
+      <li><a href="#">📈 Analytics</a></li>
+      <li><a href="#">📋 Reports</a></li>
+      <li><a href="user.html">👥 Users</a></li>
+      <li><a href="#">⚙️ Settings</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <h3>Total Inventory Value</h3>
+        <p style="color: #2ecc71;">$0</p>
+        <span>+12% from last month</span>
+      </div>
+      <div class="kpi-card low">
+        <h3>Low Stock Items</h3>
+        <p style="color: #e74c3c;">0</p>
+        <span>Checking Stocks</span>
+      </div>
+    </div>
+
+    <div class="alerts">
+      <h3>⚠️ Reorder Alerts</h3>
+      <ul>
+
+      </ul>
+    </div>
+
+    <div class="table-section">
+      <h2>Inventory Table</h2>
+      <input type="text" id="search" placeholder="Search item name or code...">
+      <button onclick="downloadExcel()" class="download-btn">Download Inventory Data</button>
+      <div class="table-scroll">
+      <div class="table-responsive">
+        <table id="inventoryTable">
+          <thead>
+            <tr>
+              <th>Item Code</th>
+              <th>Item Name</th>
+              <th>Category</th>
+              <th>Quantity</th>
+              <th>Reorder Level</th>
+              <th>Unit Cost</th>
+              <th>Last Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+
+
+          </tbody>
+        </table>
+      </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h2>Add New Inventory Item</h2>
+      <form id="addItemForm">
+        <input type="text" placeholder="Item Code" id="itemCode" required>
+        <input type="text" placeholder="Item Name" id="itemName" required>
+        <select id="category" required>
+            <option value="">Select Category</option>
+            <option value="Raw Material">Raw Materials</option>
+            <option value="Spare Parts">Spare Parts</option>
+            <option value="Packaging">Packaging</option>
+            <option value="Finished Goods">Finished Goods</option>
+            <option value="Work in Progress">Work in Progress</option>
+        </select>
+        <input type="number" placeholder="Quantity" id="quantity" required>
+        <input type="number" placeholder="Reorder Level" id="reorderLevel" required>
+        <input type="number" placeholder="Unit Cost" id="unitCost" required>
+        <button type="submit">Add Item</button>
+      </form>
+    </div>
+
+    <div class="charts">
+      <div class="chart-box">
+        <h3>Inventory Category Distribution</h3>
+        <canvas id="inventoryPieChart"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <script src="inventory.js"></script>
+</body>
+</html>

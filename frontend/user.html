@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users</title>
+    <link rel="stylesheet" href="user.css">
+</head>
+<body>
+
+      <aside class="sidebar">
+    <h2>ManufactureERP</h2>
+    <ul>
+      <li><a href="index.html">🏭 Dashboard</a></li>
+      <li><a href="inventory.html">📦 Inventory</a></li>
+      <li><a href="#">📈 Analytics</a></li>
+      <li><a href="#">📋 Reports</a></li>
+      <li><a href="user.html">👥 Users</a></li>
+      <li><a href="#">⚙️ Settings</a></li>
+    </ul>
+  </aside>
+    <div class="login-form">
+        <h2>Enter Credentials</h2>
+        <div>
+            <form class="login">
+                <label for="uname"><br>Username</label>
+                <input type="text" placeholder="Enter Username" required>
+                <label for="pass"><br>Password</label>
+                <input type="password" id="Enter Password" name="passwaord" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+       minlength="8" maxlength="20"required>
+            </form>
+            <button type="submit" >Submit</button>
+        </div>
+
+        <a href>Forgot Password</a>
+    </div>
+</body>
+</html>
