@@ -25,8 +25,45 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Get items by department (optional filter route)
+router.get("/department/:department", async (req, res) => {
+  try {
+    const { department } = req.params;
+    const items = await Item.find({ department });
+    res.json(items);
+  } catch (err) {
+    console.error("Department Filter Error:", err);
+    res.status(500).json({ message: "Failed to fetch items by department" });
+  }
+});
 
-// Get fixed-category chart data for inventory
+// Get items by category (optional filter route)
+router.get("/category/:category", async (req, res) => {
+  try {
+    const { category } = req.params;
+    const items = await Item.find({ category });
+    res.json(items);
+  } catch (err) {
+    console.error("Category Filter Error:", err);
+    res.status(500).json({ message: "Failed to fetch items by category" });
+  }
+});
+
+// Get low stock items - Updated threshold to 20
+router.get("/low-stock", async (req, res) => {
+  try {
+    const lowStockThreshold = 20; // Changed from 10 to 20
+    const items = await Item.find({
+      quantity: { $lt: lowStockThreshold }
+    });
+    res.json(items);
+  } catch (err) {
+    console.error("Low Stock Filter Error:", err);
+    res.status(500).json({ message: "Failed to fetch low stock items" });
+  }
+});
+
+// Get chart data - updated to include department breakdown
 router.get("/chart-data", async (req, res) => {
   try {
     const categories = [
@@ -61,7 +98,76 @@ router.get("/chart-data", async (req, res) => {
   }
 });
 
+// Get department chart data (new route for department breakdown)
+router.get("/department-chart-data", async (req, res) => {
+  try {
+    const data = await Item.aggregate([
+      { $group: { _id: "$department", total: { $sum: "$quantity" } } }
+    ]);
 
+    res.json({
+      labels: data.map(d => d._id),
+      data: data.map(d => d.total)
+    });
+  } catch (err) {
+    console.error("Department Chart Data Error:", err);
+    res.status(500).json({ message: "Failed to fetch department chart data" });
+  }
+});
+
+// Update item (new route for edit functionality)
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedItem = await Item.findByIdAndUpdate(
+      id, 
+      { ...req.body, lastUpdated: Date.now() }, 
+      { new: true, runValidators: true }
+    );
+    
+    if (!updatedItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    
+    res.json(updatedItem);
+  } catch (err) {
+    console.error("Update Error:", err);
+    res.status(500).json({ message: "Failed to update item" });
+  }
+});
+
+// Delete item (new route for delete functionality)
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedItem = await Item.findByIdAndDelete(id);
+    
+    if (!deletedItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    
+    res.json({ message: "Item deleted successfully" });
+  } catch (err) {
+    console.error("Delete Error:", err);
+    res.status(500).json({ message: "Failed to delete item" });
+  }
+});
+
+// Get single item by ID (new route for view functionality)
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const item = await Item.findById(id);
+    
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    
+    res.json(item);
+  } catch (err) {
+    console.error("Get Item Error:", err);
+    res.status(500).json({ message: "Failed to fetch item" });
+  }
+});
 
 module.exports = router;
-
