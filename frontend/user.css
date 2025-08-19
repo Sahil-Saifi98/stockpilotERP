@@ -6,6 +6,7 @@ body {
   background-image: url("orsrc45477.jpg");
 }
 
+
 .sidebar {
   width: 220px;
   background: #9227e3;
@@ -43,15 +44,14 @@ body {
     border: 5px solid rgb(164, 69, 196);
     border-style: hidden;
     margin-left: 30%;
-    padding: 20px;
+    padding: 10px 20px;
 
 }
 
 .login-form h2{
-text-align: absolute;
-margin-left: 30%;
+  text-align: absolute;
+  margin-left: 30%;
   color: #8d17e6;
-  margin-left: 10px;
   padding: 10px;
 }
 
@@ -59,24 +59,33 @@ margin-left: 30%;
     border-radius: 5px;
     text-align: center;
     color: #180b22;
+    padding: auto;
 }
 .login-form button{
-    margin-left: auto;
+    margin-left: 50%;
+    margin-top: 10px;;
+    padding: 10px 12px;
     border-radius: 5px;
     position: center;
-    color: #0f0517;
-    background-color: rgb(210, 195, 169);
+    color: #fff;
+    background: #9227e3;
+}
+.login-form a{
+  color: #9227e3;
+  margin-right: auto;
+  margin-left: 110px ;
 }
 
 .login input{
-
-    border-radius: 5%;
-    background-color: rgb(226, 220, 218);
+  margin-top: 10px;
+    border-radius: 5px;
+    background-color: #fff;
+    padding: 10px 20px;
 }
 
 .login-form button:hover{
      cursor: pointer;
-    background-color: #da923f;
+    background-color: #8d17e6;
 
 
 }

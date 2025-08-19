@@ -4,14 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Inventory Dashboard</title>
+  <link rel="icon" type="image/png" href="advance_hydrautech_pvt_ltd_logo.jpeg" style="border-radius: 50%;">
   <link rel="stylesheet" href="inventory.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <aside class="sidebar">
-    <h2>StockPilotERP</h2>
+    <img src="download.jpeg" alt="logo">
     <ul>
-      <li><a href="index.html">🏭 Dashboard</a></li>
+      <li><a href="index.html">📊 Dashboard</a></li>
+      <li><a href="manufacturing.html">🏭 Manufacturing</a></li>
       <li><a href="inventory.html">📦 Inventory</a></li>
       <li><a href="#">📈 Analytics</a></li>
       <li><a href="#">📋 Reports</a></li>
@@ -21,51 +23,277 @@
   </aside>
 
   <main class="main">
+    <h1>Inventory</h1>
 
     <div class="kpi-row">
       <div class="kpi-card">
-        <h3>Total Inventory Value</h3>
-        <p style="color: #2ecc71;">$0</p>
-        <span>+12% from last month</span>
+        <h3>Total Items</h3>
+        <p style="color: #010f07;" id="totalItems">0</p>
+        <span>Updated just now</span>
       </div>
       <div class="kpi-card low">
         <h3>Low Stock Items</h3>
-        <p style="color: #e74c3c;">0</p>
-        <span>Checking Stocks</span>
+        <p style="color: #e74c3c;" id="lowStockCount">0</p>
+        <span>All items in stock</span>
+      </div>
+      <div class="kpi-card">
+        <h3>WIP Items</h3>
+        <p style="color: #f39c12;" id="wipItemsCount">0</p>
+        <span>In production</span>
+      </div>
+      <div class="kpi-card">
+        <h3>Ready Stock</h3>
+        <p style="color: #27ae60;" id="readyStockCount">0</p>
+        <span>Available</span>
       </div>
     </div>
 
-    <div class="alerts">
-      <h3>⚠️ Reorder Alerts</h3>
-      <ul>
+    <!-- Purchase Details Section -->
+    <div class="purchaseModel">
+      <h2>Purchase Details</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <button type="button" id="viewPurchaseHistory" style="background: #8f48d1; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">View Purchase History</button>
+      </div>
+      <form id="purchase">
+        <input type="date" id="purchaseDate" placeholder="Purchase Date" style="flex: 1; margin-right: 12px;" required>
+        <input type="text" placeholder="Invoice No." id="invoiceNo" style="flex: 1; margin-right: 12px;" required>
+        <input type="text" placeholder="Item Code" id="purchaseItemCode" style="flex: 1; margin-right: 12px;" required>
+        <input type="text" placeholder="Part Name" id="purchasePartName" style="flex: 1; margin-right: 12px;" required>
+        <input type="number" placeholder="Material Quantity" id="purchaseQuantity" style="flex: 1; margin-right: 12px;" min="1" required>
+        <button type="submit">Add to Store</button>
+      </form>
+    </div>
 
-      </ul>
+    <!-- Purchase History Table -->
+    <div class="table-section" id="purchaseHistorySection" style="display: none;">
+      <h2>Purchase History</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <input type="text" id="searchPurchase" placeholder="Search invoice, part name..." style="flex: 1; margin-right: 15px;">
+        <button onclick="downloadPurchaseExcel()" class="download-btn">Download</button>
+      </div>
+      <div class="table-scroll">
+        <div class="table-responsive">
+          <table id="purchaseHistoryTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Invoice No.</th>
+                <th>Item Code</th>
+                <th>Part Name</th>
+                <th>Quantity</th>
+                <th>Added By</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Issue to WIP Section -->
+    <div class="purchaseModel" id="issueToWipSection" style="display: none;">
+      <h2>Issue Details - Transfer to WIP</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <button type="button" id="viewIssueHistory" style="background: #f39c12; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">View Issue History</button>
+        <button type="button" id="closeIssueSection" style="background: #e74c3c; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+      </div>
+      <form id="issueToWipForm">
+        <select id="issueProduct" required>
+          <option value="">Select Product</option>
+        </select>
+        <input type="number" placeholder="Quantity" id="issueQuantity" min="1" required>
+        <input type="text" placeholder="Issued To (Person/Dept)" id="issuedTo" required>
+        <input type="text" placeholder="Work Order" id="workOrder" required>
+        <input type="text" placeholder="Machine" id="machine" required>
+        <input type="date" id="issueDate" required>
+        <button type="submit">Issue to WIP</button>
+      </form>
+    </div>
+
+    <!-- Issue History Table -->
+    <div class="table-section" id="issueHistorySection" style="display: none;">
+      <h2>Issue History</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <input type="text" id="searchIssue" placeholder="Search product, work order..." style="flex: 1; margin-right: 15px;">
+        <button onclick="downloadIssueExcel()" class="download-btn">Download</button>
+      </div>
+      <div class="table-scroll">
+        <div class="table-responsive">
+          <table id="issueHistoryTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Product</th>
+                <th>Item Code</th>
+                <th>Quantity</th>
+                <th>Issued To</th>
+                <th>Work Order</th>
+                <th>Machine</th>
+                <th>Issued By</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dispatch Details Section -->
+    <div class="table-section" id="dispatchDetailsSection" style="display: none;">
+      <h2>Dispatch Details</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <input type="text" id="searchDispatch" placeholder="Search product, work order..." style="flex: 1; margin-right: 15px;">
+        <div style="display: flex; gap: 10px;">
+          <button onclick="downloadDispatchExcel()" class="download-btn">Download</button>
+          <button onclick="closeDispatchDetails()" style="background: #e74c3c; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <div class="table-responsive">
+          <table id="dispatchDetailsTable">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Item Code</th>
+                <th>Department</th>
+                <th>Quantity</th>
+                <th>Work Order</th>
+                <th>Machine</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manufacturing Items Section -->
+    <div class="table-section">
+      <h2>Manufacturing Inventory Items</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div class="filter-row" style="display: flex; gap: 10px;">
+          <select id="filterStockType">
+            <option value="">All Stock Types</option>
+            <option value="Ready Stock">Ready Stock</option>
+            <option value="WIP">Work in Progress</option>
+          </select>
+          <button onclick="showIssueToWipSection()" class="action-btn" style="background: #f39c12;">Issue to WIP</button>
+          <button onclick="showDispatchDetails()" class="action-btn" style="background: #2980b9;">See Dispatch Details</button>
+          <button onclick="dispatchItems()" class="action-btn" style="background: #e74c3c;">Dispatch</button>
+        </div>
+      </div>
+      
+      <div class="table-scroll">
+        <div class="table-responsive">
+          <table id="manufacturingItemsTable">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="selectAllManufacturing"></th>
+                <th>Product</th>
+                <th>Item Code</th>
+                <th>Department</th>
+                <th>Ready Stock</th>
+                <th>WIP Stock</th>
+                <th>Total Stock</th>
+                <th>Stock Type</th>
+                <th>Last Updated</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Move Items Modal -->
+    <div id="moveItemsModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3 id="modalTitle">Move Items</h3>
+        <form id="moveItemsForm">
+          <label>Quantity to move:</label>
+          <input type="number" id="moveQuantity" min="1" required>
+          <div class="modal-actions">
+            <button type="submit">Confirm Move</button>
+            <button type="button" onclick="closeModal()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="moveItemModel" class="model" style="display: none;"></div>
+    <div class="model-content"></div>
+    <span class="close">&times;</span>
+  
+
+    <!-- Dispatch Modal -->
+    <div id="dispatchModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Dispatch Items</h3>
+        <form id="dispatchForm">
+          <label>Customer/Destination:</label>
+          <input type="text" id="dispatchDestination" required>
+          <label>Dispatch Date:</label>
+          <input type="date" id="dispatchDate" required>
+          <label>Quantity to dispatch:</label>
+          <input type="number" id="dispatchQuantity" min="1" required>
+          <div class="modal-actions">
+            <button type="submit">Confirm Dispatch</button>
+            <button type="button" onclick="closeModal()">Cancel</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div class="table-section">
-      <h2>Inventory Table</h2>
-      <input type="text" id="search" placeholder="Search item name or code...">
-      <button onclick="downloadExcel()" class="download-btn">Download Inventory Data</button>
-      <div class="table-scroll">
-      <div class="table-responsive">
-        <table id="inventoryTable">
-          <thead>
-            <tr>
-              <th>Item Code</th>
-              <th>Item Name</th>
-              <th>Category</th>
-              <th>Quantity</th>
-              <th>Reorder Level</th>
-              <th>Unit Cost</th>
-              <th>Last Updated</th>
-            </tr>
-          </thead>
-          <tbody>
+      <h2>Bought Out Inventory Items</h2>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <input type="text" id="search" placeholder="Search item name or code..." style="flex: 1; margin-right: 15px;">
+        
+        <div class="filter-row" style="display: flex; gap: 10px;">
+          <select id="filterDepartment">
+            <option value="">All Departments</option>
+            <option value="Cylinder">Cylinder</option>
+            <option value="PowerPack">PowerPack</option>
+          </select>
 
+          <select id="filterCategory">
+            <option value="">All Categories</option>
+            <option value="Raw Materials">Raw Materials</option>
+            <option value="Spare Parts">Spare Parts</option>
+            <option value="Packaging">Packaging</option>
+            <option value="Finished Goods">Finished Goods</option>
+            <option value="Work in Progress">Work in Progress</option>
+          </select>
 
-          </tbody>
-        </table>
+          <button onclick="filterLowStock()">Low Stock</button>
+          <button onclick="downloadExcel()" class="download-btn">Download</button>
+        </div>
       </div>
+
+      <div class="table-scroll">
+        <div class="table-responsive">
+          <table id="inventoryTable">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Item Code</th>
+                <th>Department</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Last Updated</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -73,26 +301,33 @@
       <h2>Add New Inventory Item</h2>
       <form id="addItemForm">
         <input type="text" placeholder="Item Code" id="itemCode" required>
-        <input type="text" placeholder="Item Name" id="itemName" required>
+        <input type="text" placeholder="Product Name" id="itemName" required>
+        <select id="department" required>
+            <option value="">Select Department</option>
+            <option value="Cylinder">Cylinder</option>
+            <option value="PowerPack">PowerPack</option>
+        </select>
         <select id="category" required>
             <option value="">Select Category</option>
-            <option value="Raw Material">Raw Materials</option>
+            <option value="Raw Materials">Raw Materials</option>
             <option value="Spare Parts">Spare Parts</option>
             <option value="Packaging">Packaging</option>
             <option value="Finished Goods">Finished Goods</option>
             <option value="Work in Progress">Work in Progress</option>
         </select>
         <input type="number" placeholder="Quantity" id="quantity" required>
-        <input type="number" placeholder="Reorder Level" id="reorderLevel" required>
-        <input type="number" placeholder="Unit Cost" id="unitCost" required>
         <button type="submit">Add Item</button>
       </form>
     </div>
 
     <div class="charts">
       <div class="chart-box">
-        <h3>Inventory Category Distribution</h3>
+        <h3>Bought Out Inventory Category Distribution</h3>
         <canvas id="inventoryPieChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Stock Flow Overview</h3>
+        <canvas id="stockFlowChart"></canvas>
       </div>
     </div>
   </main>

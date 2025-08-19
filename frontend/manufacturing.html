@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manufacturing</title>
+  <link rel="icon" type="image/png" href="advance_hydrautech_pvt_ltd_logo.jpeg">
+  <link rel="stylesheet" href="manufacturing.css"/>
+</head>
+<body>
+  <aside class="sidebar">
+    <img src="download.jpeg" alt="logo">
+    <ul>
+      <li><a href="index.html">📊 Dashboard</a></li>
+      <li><a href="manufacturing.html">🏭 Manufacturing</a></li>
+      <li><a href="inventory.html">📦 Inventory</a></li>
+      <li><a href="#">📈 Analytics</a></li>
+      <li><a href="#">📋 Reports</a></li>
+      <li><a href="user.html">👥 Users</a></li>
+      <li><a href="#">⚙️ Settings</a></li>
+    </ul>
+  </aside>
+
+  <div class="main">
+    <div class="header">
+      <h1>Manufacturing Module</h1>
+      <p id="update-time"></p>
+    </div>
+
+    <div class="form-section">
+      <h2>Start New Work Order</h2>
+      <form id="trackerForm">
+        <input type="text" id="workOrder" placeholder="Work Order No." required />
+        <input type="text" id="machineName" placeholder="Machine Name" required />
+        <input type="text" id="requirementNo" placeholder="Requirement No." required />
+
+        <select id="machineSelect" required>
+          <option value="">Select Department</option>
+        </select>
+
+        <select id="componentSelect" required>
+          <option value="">Select Type</option>
+        </select>
+
+        <button id="typeadd" type="button">+</button>
+
+        <select id="materialSelect" style="display: none;" required>
+          <option value="">Select Component</option>
+        </select>
+
+        <select id="sizeSelect" style="display: none;" required>
+          <option value="">Select Size</option>
+        </select>
+
+        <div id="bomMaterialsList" style="margin: 10px 0;"></div>
+
+        <div id="customMaterialContainer" style="display: none;">
+          <input type="text" id="customMaterial" placeholder="Enter Material">
+          <button type="button" id="addCustomMaterial">Add Material</button>
+        </div>
+
+        <div id="materialProcessTableContainer" style="margin-top: 20px;">
+          <table id="materialProcessTable">
+            <thead id="processTableHeader">
+              <!-- Will be filled dynamically -->
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div id="draftPreviewContainer" style="margin-top: 20px; display: none;">
+          <h3>Products In Line</h3>
+          <table id="draftPreviewTable">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Component</th>
+                <th>Size</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <button type="submit">Start Production</button>
+      </form>
+    </div>
+
+    <!-- Updated Production Details Section -->
+    <div class="table-section">
+      <h2>Production Details</h2>
+      <div id="productionTablesContainer">
+        <!-- Tables will be dynamically generated here -->
+      </div>
+    </div>
+    
+    <div class="process-tracker">
+      <h2>Manufacturing Process Tracker</h2>
+      <div id="processStripsContainer" class="process-strips">
+        
+      </div>
+
+      <div class="completedMaterials">
+        <h3>Completed Orders</h3>
+        <ul id="completedList"></ul>
+      </div>
+    </div>
+
+    <div class="pause-durations">
+      <h3>Halt Duration Between Process</h3>
+      <table id="pauseDurationTable">
+        <thead>
+          <tr>
+            <th>Work Order</th>
+            <th>Machine</th>
+            <th>Type</th>
+            <th>Component</th>
+            <th>From → To</th>
+            <th>Duration</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="manufacturing.js"></script>
+</body>
+</html>

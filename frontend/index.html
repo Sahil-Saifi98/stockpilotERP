@@ -1,10 +1,10 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manufacturing Dashboard</title>
+  <link rel="icon" type="image/png" href="advance_hydrautech_pvt_ltd_logo.jpeg">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://code.highcharts.com/highcharts.js"></script>
@@ -12,9 +12,10 @@
 </head>
 <body>
   <aside class="sidebar">
-    <h2>StockPilotERP</h2>
+    <img src="download.jpeg" alt="logo">
     <ul>
-      <li><a href="index.html">🏭 Dashboard</a></li>
+      <li><a href="index.html">📊 Dashboard</a></li>
+      <li><a href="manufacturing.html">🏭 Manufacturing</a></li>
       <li><a href="inventory.html">📦 Inventory</a></li>
       <li><a href="#">📈 Analytics</a></li>
       <li><a href="#">📋 Reports</a></li>
@@ -25,7 +26,7 @@
 
   <main class="main">
     <div class="header">
-      <h1>Manufacturing Dashboard</h1>
+      <h1>Dashboard</h1>
       <small>Last updated: 10/7/2025, 2:48:41 PM</small>
     </div>
 
@@ -61,51 +62,6 @@
         <h3>Inventory Distribution</h3>
         <div id="pieChart3D" style="height: 400px;"></div>
       </div>
-      
-      <section class="process-tracker">
-        <div class="process-controls">
-  <label for="durationInput">⏱ Process Duration (sec):</label>
-  <input type="number" id="durationInput" value="5" min="1" max="3600">
-</div>
-
-<div class="process-log">
-  <h4>📝 Process Log</h4>
-  <ul id="logList"></ul>
-</div>
-
-  <div class="process-tracker">
-  <h2>Production Workflow</h2>
-  <button id="startBtn">▶Start Process</button>
-  <div class="process-line">
-    <div class="process-card" id="cutting">
-      <h3>🔧 Cutting</h3>
-      <p class="start-time">Start: -</p>
-      <p class="end-time">End: -</p>
-      <p class="duration">Duration: -</p>
-      <p class="countdown">⏳ Timer: --:--</p>
-    </div>
-    <div class="line-connector"></div>
-    <div class="process-card" id="assembly">
-      <h3>🔩 Assembly</h3>
-      <p class="start-time">Start: -</p>
-      <p class="end-time">End: -</p>
-      <p class="duration">Duration: -</p>
-      <p class="countdown">⏳ Timer: --:--</p>
-    </div>
-    <div class="line-connector"></div>
-    <div class="process-card" id="packaging">
-      <h3>📦 Packaging</h3>
-      <p class="start-time">Start: -</p>
-      <p class="end-time">End: -</p>
-      <p class="duration">Duration: -</p>
-      <p class="countdown">⏳ Timer: --:--</p>
-    </div>
-  </div>
-</div>
-
-</section>
-
-
     </div>
   </main>
 
