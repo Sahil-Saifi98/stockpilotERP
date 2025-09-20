@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports</title>
+    <link rel="icon" type="image/png" href="advance_hydrautech_pvt_ltd_logo.jpeg">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="reports.css"/>
+</head>
+<body>
+    <aside class="sidebar">
+        <img src="download.jpeg" alt="logo">
+        <ul>
+          <li><a href="index.html"><i class="fa-solid fa-chart-simple"></i> Dashboard</a></li>
+          <li><a href="manufacturing.html"><i class="fa-solid fa-industry"></i> Manufacturing</a></li>
+          <li><a href="inventory.html"><i class="fa-solid fa-boxes-stacked"></i> Inventory</a></li>
+          <li><a href="#"><i class="fa-solid fa-chart-line"></i> Analytics</a></li>
+          <li><a href="reports.html"><i class="fa-solid fa-file-lines"></i> Reports</a></li>
+          <li><a href="user.html"><i class="fa-solid fa-users"></i> Users</a></li>
+          <li><a href="#"><i class="fa-solid fa-gear"></i> Settings</a></li>
+        </ul>
+      </aside>
+      
+      <main class="main">
+          <div class="header">
+              <h1>Reports</h1>
+          </div>
+
+          <div class="date-selection">
+              <h2>
+                  <i class="fas fa-calendar-alt"></i>
+                  Select Date Range
+              </h2>
+              <form id="range" class="date-range"> 
+                  <div class="date-field">
+                    <h4><i class="fa-solid fa-filter"></i>From Date</h4>
+                    <input type="date" id="fromDate" placeholder="From Date" style="flex: 1; margin-right: 12px;" required>
+                  </div>
+                  
+                  <div class="date-field">
+                    <h4><i class="fa-solid fa-filter"></i>To Date</h4>
+                    <input type="date" id="toDate" placeholder="To Date" style="flex: 1; margin-right: 12px;" required>
+                  </div>
+
+                  <div class="date-field">
+                    <h4><i class="fa-regular fa-file-lines"></i>Format</h4>
+                    <select id="formatSelect" required>
+                    <option value="">Select Format</option>
+                    <option value="1">PDF</option>
+                    <option value="2">CSV</option>
+                    <option value="3">Excel</option>
+                    </select>
+                  </div>
+              </form>
+          </div>
+
+          <div class="manufacturing-field">
+              <div class="section-header">
+                  <h2 class="section-title">
+                      <i class="fas fa-industry"></i>
+                      Manufacturing
+                  </h2>
+                  <span class="section-count">3 reports</span>
+              </div>
+              
+              <div class="reports-grid">
+                  <div class="report-card">
+                      <div class="report-card-header">
+                          <div class="report-icon completed">
+                              <i class="fas fa-check-circle"></i>
+                          </div>
+                          <div class="report-details">
+                              <h3>Completed Machines</h3>
+                              <p>Manufacturing completed machines report</p>
+                          </div>
+                      </div>
+                      <button class="download-btn">
+                          <i class="fas fa-download"></i>
+                          Download Report
+                      </button>
+                  </div>
+
+                  <div class="report-card">
+                      <div class="report-card-header">
+                          <div class="report-icon manufacturing">
+                              <i class="fas fa-cogs"></i>
+                          </div>
+                          <div class="report-details">
+                              <h3>Manufacturing</h3>
+                              <p>Overall manufacturing operations report</p>
+                          </div>
+                      </div>
+                      <button class="download-btn">
+                          <i class="fas fa-download"></i>
+                          Download Report
+                      </button>
+                  </div>
+
+                  <div class="report-card">
+                      <div class="report-card-header">
+                          <div class="report-icon wip">
+                              <i class="fas fa-clock"></i>
+                          </div>
+                          <div class="report-details">
+                              <h3>Work in Progress (WIP)</h3>
+                              <p>Current work in progress status</p>
+                          </div>
+                      </div>
+                      <button class="download-btn">
+                          <i class="fas fa-download"></i>
+                          Download Report
+                      </button>
+                  </div>
+              </div>
+          </div>
+
+          <div class="inventory-field">
+              <div class="section-header">
+                  <h2 class="section-title">
+                      <i class="fas fa-boxes"></i>
+                      Inventory Reports
+                  </h2>
+                  <span class="section-count">5 reports</span>
+              </div>
+              
+              <div class="reports-grid">
+                  <div class="report-card">
+                      <div class="report-card-header">
+                          <div class="report-icon bought-out">
+                              <i class="fas fa-shopping-cart"></i>
+                          </div>
+                          <div class="report-details">
+                              <h3>Bought Out Items</h3>
+                              <p>Report of purchased components and materials</p>
+                          </div>
+                      </div>
+                      <button class="download-btn">
+                          <i class="fas fa-download"></i>
+                          Download Report
+                      </button>
+                  </div>
+
+                  <div class="report-card">
+                      <div class="report-card-header">
+                          <div class="report-icon inventory">
+                              <i class="fas fa-warehouse"></i>
+                          </div>
+                          <div class="report-details">
+                              <h3>Manufacturing Inventory</h3>
+                              <p>Current manufacturing stock and materials</p>
+                          </div>
+                      </div>
+                      <button class="download-btn">
+                          <i class="fas fa-download"></i>
+                          Download Report
+                      </button>
+                  </div>
+
+                  <div class="report-card">
+                      <div class="report-card-header">
+                          <div class="report-icon wip">
+                              <i class="fas fa-clock"></i>
+                          </div>
+                          <div class="report-details">
+                              <h3>Work in Progress (WIP)</h3>
+                              <p>Items currently in manufacturing process</p>
+                          </div>
+                      </div>
+                      <button class="download-btn">
+                          <i class="fas fa-download"></i>
+                          Download Report
+                      </button>
+                  </div>
+
+                  <div class="report-card">
+                      <div class="report-card-header">
+                          <div class="report-icon dispatch">
+                              <i class="fas fa-truck"></i>
+                          </div>
+                          <div class="report-details">
+                              <h3>Dispatch Reports</h3>
+                              <p>Shipped and dispatched items tracking</p>
+                          </div>
+                      </div>
+                      <button class="download-btn">
+                          <i class="fas fa-download"></i>
+                          Download Report
+                      </button>
+                  </div>
+
+                  <div class="report-card">
+                      <div class="report-card-header">
+                          <div class="report-icon purchase">
+                              <i class="fas fa-cube"></i>
+                          </div>
+                          <div class="report-details">
+                              <h3>Purchase Orders</h3>
+                              <p>Purchase orders and procurement tracking</p>
+                          </div>
+                      </div>
+                      <button class="download-btn">
+                          <i class="fas fa-download"></i>
+                          Download Report
+                      </button>
+                  </div>
+              </div>
+          </div>
+
+      </main>
+
+</body>
+</html>

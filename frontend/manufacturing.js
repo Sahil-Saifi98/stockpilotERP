@@ -7,14 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
     machineNameInput: document.getElementById('machineName'),
     machineSelect: document.getElementById('machineSelect'),
     componentSelect: document.getElementById('componentSelect'),
+    customComponentInput: document.getElementById('customComponentInput'),
     materialSelect: document.getElementById('materialSelect'),
+    customMaterialInput: document.getElementById('customMaterialInput'),
     sizeSelect: document.getElementById('sizeSelect'),
-    customMaterialInput: document.getElementById('customMaterial'),
-    addCustomMaterialBtn: document.getElementById('addCustomMaterial'),
+    sizeInput: document.getElementById('sizeInput'),
+    processCountSelect: document.getElementById('processCountSelect'),
     materialProcessTable: document.getElementById('materialProcessTable').querySelector('tbody'),
     processTableHeader: document.getElementById('processTableHeader'),
     tableContainer: document.getElementById('materialProcessTableContainer'),
-    customMaterialContainer: document.getElementById('customMaterialContainer'),
     pauseDurationTable: document.getElementById('pauseDurationTable').querySelector('tbody'),
     draftPreviewTable: document.getElementById('draftPreviewTable').querySelector('tbody'),
     draftPreviewContainer: document.getElementById('draftPreviewContainer'),
@@ -29,11 +30,13 @@ document.addEventListener('DOMContentLoaded', () => {
     processNames: {},
     products: [],
     allMaterials: [],
-    pauseRecords: [], // This will now be loaded from database
+    pauseRecords: [],
     draftProducts: [],
     currentlyOpenMaterial: null,
-    workOrderTables: {}, // Store work order table data
-    processStartTimes: {} // NEW: Store active process start times in memory
+    workOrderTables: {},
+    processStartTimes: {},
+    isCustomComponent: false,
+    isCustomMaterial: false
   };
 
   // Constants
@@ -56,17 +59,56 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${hours}:${minutes}:${seconds}`;
   };
 
+  // Generate process data for custom items
+  const getCustomProcessData = (processCount) => {
+    const processIDs = [];
+    const processNames = {};
+    
+    for (let i = 1; i <= processCount; i++) {
+      const processId = `process${i}`;
+      processIDs.push(processId);
+      // Process names will be editable in the process table
+      processNames[processId] = `Process ${i}`;
+    }
+    
+    return { processIDs, processNames };
+  };
+
+  // Clear material fields
   const clearMaterialFields = () => {
     elements.materialSelect.value = '';
     elements.sizeSelect.value = '';
+    elements.sizeInput.value = '';
     elements.sizeSelect.innerHTML = '<option value="">Select Size</option>';
     elements.materialSelect.innerHTML = '<option value="">Select Component</option>';
     elements.materialSelect.style.display = 'none';
     elements.sizeSelect.style.display = 'none';
+    elements.sizeInput.style.display = 'none';
+    elements.processCountSelect.style.display = 'none';
     elements.materialProcessTable.innerHTML = '';
     elements.processTableHeader.innerHTML = '';
     elements.customMaterialInput.value = '';
+    elements.customMaterialInput.style.display = 'none';
     state.allMaterials = [];
+    state.isCustomMaterial = false;
+  };
+
+  // Reset form fields after adding to draft (only reset after department)
+  const resetFormAfterDraft = () => {
+    // Reset component and everything after it
+    elements.componentSelect.value = '';
+    elements.customComponentInput.value = '';
+    elements.customComponentInput.style.display = 'none';
+    state.isCustomComponent = false;
+    
+    // Clear all material-related fields
+    clearMaterialFields();
+    
+    // Hide process table
+    elements.tableContainer.style.display = 'none';
+    
+    // Keep work order, machine name, and department selected
+    // This allows user to quickly add multiple items with same work order and department
   };
 
   const hideAllWorkOrderTables = () => {
@@ -75,7 +117,42 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // NEW: Fetch halt duration records from database
+  // Check if we should show process count selector for custom items
+  const checkAndShowProcessCountSelector = () => {
+    // Show process count selector when:
+    // 1. Component is "other" (custom component) and size is entered, OR
+    // 2. Material is "other" (custom material) and size is entered
+    const isCustomComponentWithSize = state.isCustomComponent && elements.sizeInput.value.trim();
+    const isCustomMaterialWithSize = state.isCustomMaterial && elements.sizeInput.value.trim();
+    
+    if (isCustomComponentWithSize || isCustomMaterialWithSize) {
+      elements.processCountSelect.style.display = 'inline-block';
+      
+      // Auto-setup process data if not already done
+      const processCount = elements.processCountSelect.value || '3';
+      if (state.processIDs.length === 0) {
+        const customProcessData = getCustomProcessData(parseInt(processCount));
+        state.processIDs = customProcessData.processIDs;
+        state.processNames = customProcessData.processNames;
+        
+        // Get current material name
+        let materialName = 'Custom Material';
+        if (state.isCustomComponent) {
+          materialName = elements.customComponentInput.value.trim() || 'Custom Component';
+        } else if (state.isCustomMaterial) {
+          materialName = elements.customMaterialInput.value.trim() || 'Custom Material';
+        }
+        
+        state.allMaterials = [materialName];
+        renderMaterialTable();
+        elements.tableContainer.style.display = 'block';
+      }
+    } else {
+      elements.processCountSelect.style.display = 'none';
+    }
+  };
+
+  // Fetch functions
   const fetchHaltDurationRecords = () => {
     fetch('http://localhost:5000/api/production/halt-duration')
       .then(res => res.json())
@@ -97,7 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => {
         if (!Array.isArray(data)) return;
 
-        // Store and normalize into state.products
         state.products = data.map(item => ({
           id: item._id,
           workOrder: item.workOrder,
@@ -117,7 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
           pauseToNextDuration: item.processPath[item.currentProcessIndex]?.pauseToNextDuration || null
         }));
 
-        // NEW: Restore active process start times to memory for duration calculation
         state.products.forEach(p => {
           if (p.status === 'in-progress' && p.startTime) {
             const key = `${p.id}-${p.processIndex}`;
@@ -126,7 +201,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
 
-        // Store work order table data and create tables
         const groupedByWorkOrder = {};
         state.products.forEach(p => {
           const key = p.workOrder;
@@ -140,10 +214,8 @@ document.addEventListener('DOMContentLoaded', () => {
           groupedByWorkOrder[key].items.push(p);
         });
 
-        // Store in state for later retrieval
         state.workOrderTables = groupedByWorkOrder;
 
-        // Create tables for each work order
         Object.values(groupedByWorkOrder).forEach(woData => {
           createWorkOrderTableFromData(woData);
         });
@@ -157,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const createWorkOrderTableFromData = (woData) => {
     const container = document.createElement('div');
     container.className = 'workorder-table-container';
-    container.style.display = 'none'; // Hidden initially
+    container.style.display = 'none';
 
     const title = document.createElement('h3');
     title.textContent = `Work Order: ${woData.workOrder} | Machine Name: ${woData.machineName}`;
@@ -179,7 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
       <tbody></tbody>
     `;
 
-    // Add rows for each item
     const tbody = table.querySelector('tbody');
     woData.items.forEach(item => {
       const row = document.createElement('tr');
@@ -196,7 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     container.appendChild(table);
     
-    // Find or create table section
     let tableSection = document.querySelector('.table-section');
     if (!tableSection) {
       tableSection = document.createElement('div');
@@ -207,18 +277,15 @@ document.addEventListener('DOMContentLoaded', () => {
     tableSection.appendChild(container);
   };
 
-  // UPDATED: Function to update pause duration table with work order filtering
   const updatePauseDurationTable = () => {
     elements.pauseDurationTable.innerHTML = '';
     
     const currentWorkOrder = elements.workOrderInput.value.trim();
     
-    // Filter records by work order if specified
     const filteredRecords = currentWorkOrder 
       ? state.pauseRecords.filter(record => record.workOrder === currentWorkOrder)
       : [];
     
-    // Only show records if there's a work order specified
     if (currentWorkOrder && filteredRecords.length === 0) {
       const row = document.createElement('tr');
       row.innerHTML = `
@@ -255,7 +322,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // NEW: Save halt duration record to database
   const saveHaltDurationRecord = (haltRecord) => {
     fetch('http://localhost:5000/api/production/halt-duration', {
       method: 'POST',
@@ -267,7 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(res => res.json())
     .then(data => {
       console.log('✅ Saved halt duration record:', data);
-      // Add to local state immediately
       state.pauseRecords.push(haltRecord);
       updatePauseDurationTable();
     })
@@ -276,24 +341,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // Initialization
   const init = () => {
     elements.updateTime.textContent = new Date().toLocaleString();
     elements.workOrderInput.value = '';
     
-    // Hide elements initially
     elements.tableContainer.style.display = 'none';
-    elements.customMaterialContainer.style.display = 'none';
     elements.materialSelect.style.display = 'none';
     elements.sizeSelect.style.display = 'none';
+    elements.sizeInput.style.display = 'none';
+    elements.customComponentInput.style.display = 'none';
+    elements.customMaterialInput.style.display = 'none';
+    elements.processCountSelect.style.display = 'none';
     
     fetchMachineData();
     fetchProductionItems();
-    fetchHaltDurationRecords(); // NEW: Load halt duration records
+    fetchHaltDurationRecords();
     setupEventListeners();
   };
 
-  // API Functions
   const fetchMachineData = () => {
     fetch('http://localhost:5000/api/machines')
       .then(res => res.json())
@@ -323,7 +388,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   };
 
-  // Dropdown Population Functions
   const populateMachineDropdown = (machineNames) => {
     elements.machineSelect.innerHTML = '<option value="">Select Department</option>';
     machineNames.forEach(name => {
@@ -334,6 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  // Add "Other" option to component dropdown
   const populateComponentDropdown = (selectedMachine) => {
     elements.componentSelect.innerHTML = '<option value="">Select Type</option>';
     
@@ -345,9 +410,17 @@ document.addEventListener('DOMContentLoaded', () => {
       option.textContent = component;
       elements.componentSelect.appendChild(option);
     });
+    
+    // Add "Other" option
+    const otherOption = document.createElement('option');
+    otherOption.value = 'other';
+    otherOption.textContent = 'Other';
+    elements.componentSelect.appendChild(otherOption);
+    
     elements.componentSelect.style.display = 'inline-block';
   };
 
+  // Add "Other" option to material dropdown
   const populateMaterialDropdown = (selectedMachine, selectedComponent) => {
     const materials = state.machineComponentMap[selectedMachine][selectedComponent];
     
@@ -358,9 +431,17 @@ document.addEventListener('DOMContentLoaded', () => {
       option.textContent = mat.name;
       elements.materialSelect.appendChild(option);
     });
+    
+    // Add "Other" option
+    const otherOption = document.createElement('option');
+    otherOption.value = 'other';
+    otherOption.textContent = 'Other';
+    elements.materialSelect.appendChild(otherOption);
+    
     elements.materialSelect.style.display = 'inline-block';
   };
 
+  // Populate size dropdown - for predefined materials
   const populateSizeDropdown = (material) => {
     elements.sizeSelect.innerHTML = '<option value="">Select Size</option>';
     (material.sizes || []).forEach(size => {
@@ -369,7 +450,15 @@ document.addEventListener('DOMContentLoaded', () => {
       option.textContent = size;
       elements.sizeSelect.appendChild(option);
     });
+    
     elements.sizeSelect.style.display = 'inline-block';
+    elements.sizeInput.style.display = 'none';
+  };
+
+  // Show size input field for custom materials
+  const showSizeInput = () => {
+    elements.sizeSelect.style.display = 'none';
+    elements.sizeInput.style.display = 'inline-block';
   };
 
   const updateProcessData = (material) => {
@@ -383,21 +472,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // Render Functions
+  // Render functions
   const renderMaterialTable = () => {
     elements.materialProcessTable.innerHTML = '';
     elements.processTableHeader.innerHTML = '';
 
-    // Render header
     const headerRow1 = document.createElement('tr');
     headerRow1.innerHTML = `<th>Material</th><th colspan="${state.processIDs.length}">Assign to Processes</th>`;
     const headerRow2 = document.createElement('tr');
-    headerRow2.innerHTML = `<th></th>` + state.processIDs.map(pid => `<th>${state.processNames[pid]}</th>`).join('');
+    
+    // Create editable process name headers
+    const processHeaders = state.processIDs.map(pid => {
+      const processName = state.processNames[pid] || pid;
+      return `<th><input type="text" value="${processName}" onchange="updateProcessName('${pid}', this.value)" style="border:none; background:transparent; text-align:center" /></th>`;
+    }).join('');
+    
+    headerRow2.innerHTML = `<th></th>${processHeaders}`;
 
     elements.processTableHeader.appendChild(headerRow1);
     elements.processTableHeader.appendChild(headerRow2);
 
-    // Render material rows
     state.allMaterials.forEach(material => {
       const row = document.createElement('tr');
       const checkboxes = state.processIDs.map(pid =>
@@ -408,15 +502,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  // Global function to update process names
+  window.updateProcessName = (processId, newName) => {
+    state.processNames[processId] = newName.trim() || processId;
+  };
+
   const renderDraftPreview = () => {
     elements.draftPreviewTable.innerHTML = '';
 
     state.draftProducts.forEach((item, index) => {
       const row = document.createElement('tr');
-      // Use the stored process names for this specific draft item
-      const processNamesDisplay = item.processPath.map(pid => 
-        item.processNames[pid] || pid
-      ).join(', ');
       
       row.innerHTML = `
         <td>${item.component}</td>
@@ -434,7 +529,6 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.processStripsContainer.innerHTML = '';
     const currentWorkOrder = elements.workOrderInput.value.trim();
 
-    // Filter out completed items
     const activeProducts = state.products.filter(p => 
       p.status !== 'completed' && (!currentWorkOrder || p.workOrder === currentWorkOrder));
 
@@ -443,7 +537,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Group products by material + work order
     const grouped = {};
     activeProducts.forEach(p => {
       const key = `${p.workOrder}-${p.material}`;
@@ -458,10 +551,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const strip = document.createElement('div');
       strip.className = 'material-strip';
 
-      // Create header
       const header = createStripHeader(workOrder, component, material, processes, group);
-      
-      // Create expandable cards
       const cardStack = createCardStack(processes, group);
 
       strip.appendChild(header);
@@ -469,11 +559,10 @@ document.addEventListener('DOMContentLoaded', () => {
       elements.processStripsContainer.appendChild(strip);
     });
 
-    updatePauseDurationTable(); // Update pause duration table
-    restoreExpandedStrip(); // Restore expanded state
+    updatePauseDurationTable();
+    restoreExpandedStrip();
   };
 
-  // FIXED: Create strip header with proper state management
   const createStripHeader = (workOrder, component, material, processes, group) => {
     const header = document.createElement('div');
     header.className = 'strip-header';
@@ -508,14 +597,12 @@ document.addEventListener('DOMContentLoaded', () => {
       <button class="toggle-btn">▼</button>
     `;
 
-    // Add toggle functionality
     const toggleBtn = header.querySelector('.toggle-btn');
     
     toggleBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       
-      // Find the parent strip and then the card stack
       const strip = header.closest('.material-strip');
       const cardStack = strip.querySelector('.card-stack');
       
@@ -524,17 +611,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
-      // Get current computed style to check actual visibility
       const computedStyle = window.getComputedStyle(cardStack);
       const isCurrentlyHidden = computedStyle.display === 'none';
       
       if (isCurrentlyHidden) {
-        // Show the card stack
         cardStack.style.setProperty('display', 'flex', 'important');
         toggleBtn.textContent = '▲';
         state.currentlyOpenMaterial = `${workOrder}-${material}`;
       } else {
-        // Hide the card stack
         cardStack.style.setProperty('display', 'none', 'important');
         toggleBtn.textContent = '▼';
         state.currentlyOpenMaterial = null;
@@ -544,24 +628,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return header;
   };
 
-  // UPDATED: Create card stack with real-time duration calculation
   const createCardStack = (processes, group) => {
     const cardStack = document.createElement('div');
     cardStack.className = 'card-stack';
-    // Start hidden initially
     cardStack.style.setProperty('display', 'none', 'important');
 
-    // Create one card for each process in the sequence (show all processes)
     processes.forEach(pid => {
       const processName = group[0].processNames?.[pid] || pid;
-      
-      // Get all items that are currently at this process
       const itemsAtThisProcess = group.filter(g => g.processId === pid);
 
       const card = document.createElement('div');
       card.className = 'process-card';
 
-      // If no items at this process, show empty state but still show the card
       if (itemsAtThisProcess.length === 0) {
         card.innerHTML = `
           <h3><span class="process-name">${processName}</span></h3>
@@ -573,9 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
       } else {
-        // Show items currently at this process - duration only when stopped
         const materialTags = itemsAtThisProcess.map(p => {
-          // Only show duration when process is stopped
           let durationDisplay = '';
           
           if (p.status === 'stop' && p.inProcessDuration) {
@@ -589,8 +665,8 @@ document.addEventListener('DOMContentLoaded', () => {
               <span>Status: <b>${p.status}</b></span><br>
               ${durationDisplay}
               <div class="btn-group">
-                <button class="toggle-btn" data-id="${p.id}">${p.status === 'stop' ? '⏹' : '▶'}</button>
-                <button class="next-btn" data-id="${p.id}">⏭</button>
+                <button class="toggle-btn" data-id="${p.id}">${p.status === 'stop' ? '▹' : '▶'}</button>
+                <button class="next-btn" data-id="${p.id}">⭢</button>
               </div>
             </div>
           `;
@@ -609,7 +685,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return cardStack;
   };
 
-  // FIXED: Restore expanded strip state properly
   const restoreExpandedStrip = () => {
     if (!state.currentlyOpenMaterial) return;
     
@@ -632,17 +707,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   };
-
-  // NEW: Start real-time duration updates for in-progress items (removed - not needed)
-  // const startDurationUpdates = () => {
-  //   setInterval(() => {
-  //     // Only update if there are in-progress items and strips are visible
-  //     const inProgressItems = state.products.filter(p => p.status === 'in-progress');
-  //     if (inProgressItems.length > 0 && state.currentlyOpenMaterial) {
-  //       renderProcessStrips();
-  //     }
-  //   }, 1000); // Update every second
-  // };
 
   const createOrUpdateWorkOrderTable = (workOrder, typedMachineName) => {
     hideAllWorkOrderTables();
@@ -697,26 +761,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!workOrder) return;
 
-    // Check if table exists and show it
     const workOrderTable = document.querySelector(`#table-${workOrder}`);
     if (workOrderTable) {
       workOrderTable.closest('.workorder-table-container').style.display = 'block';
     } else if (state.workOrderTables[workOrder]) {
-      // Create table from stored data
       createWorkOrderTableFromData(state.workOrderTables[workOrder]);
       const newTable = document.querySelector(`#table-${workOrder}`);
       if (newTable) {
         newTable.closest('.workorder-table-container').style.display = 'block';
       }
     }
-    renderProcessStrips(); // add this at the end of handleWorkOrderInput
+    renderProcessStrips();
   };
 
   const handleMachineChange = () => {
     const selectedMachine = elements.machineSelect.value;
     
-    // Reset dependent dropdowns
     elements.componentSelect.innerHTML = '<option value="">Select Type</option>';
+    elements.customComponentInput.style.display = 'none';
+    state.isCustomComponent = false;
     clearMaterialFields();
 
     if (!selectedMachine || !state.machineComponentMap[selectedMachine]) return;
@@ -724,25 +787,78 @@ document.addEventListener('DOMContentLoaded', () => {
     populateComponentDropdown(selectedMachine);
   };
 
+  // Handle component change with "Other" option
   const handleComponentChange = () => {
     const selectedMachine = elements.machineSelect.value;
     const selectedComponent = elements.componentSelect.value;
 
+    // Reset all dependent fields
+    elements.materialSelect.innerHTML = '<option value="">Select Component</option>';
+    elements.materialSelect.style.display = 'none';
+    elements.sizeSelect.style.display = 'none';
+    elements.sizeInput.style.display = 'none';
+    elements.customMaterialInput.style.display = 'none';
+    elements.processCountSelect.style.display = 'none';
+    state.isCustomMaterial = false;
+
+    if (selectedComponent === 'other') {
+      // Show custom component input
+      elements.customComponentInput.style.display = 'inline-block';
+      elements.customComponentInput.focus();
+      state.isCustomComponent = true;
+      
+      // For custom components, show material dropdown with "Other" option
+      elements.materialSelect.innerHTML = '<option value="">Select Component</option><option value="other">Other</option>';
+      elements.materialSelect.style.display = 'inline-block';
+      return;
+    } else {
+      // Hide custom component input
+      elements.customComponentInput.style.display = 'none';
+      state.isCustomComponent = false;
+    }
+
     if (!selectedMachine || !selectedComponent || !state.machineComponentMap[selectedMachine][selectedComponent]) {
-      elements.materialSelect.style.display = 'none';
-      elements.sizeSelect.style.display = 'none';
       return;
     }
 
     populateMaterialDropdown(selectedMachine, selectedComponent);
   };
 
+  // Handle material change with custom support
   const handleMaterialChange = () => {
     const selectedMachine = elements.machineSelect.value;
     const selectedComponent = elements.componentSelect.value;
     const selectedMaterialName = elements.materialSelect.value;
 
+    // Reset size fields
+    elements.sizeSelect.innerHTML = '<option value="">Select Size</option>';
+    elements.sizeSelect.style.display = 'none';
+    elements.sizeInput.style.display = 'none';
+    elements.processCountSelect.style.display = 'none';
+
+    if (selectedMaterialName === 'other') {
+      // Show custom material input
+      elements.customMaterialInput.style.display = 'inline-block';
+      elements.customMaterialInput.focus();
+      state.isCustomMaterial = true;
+      
+      // For custom materials, show size input field
+      showSizeInput();
+      return;
+    } else {
+      // Hide custom material input
+      elements.customMaterialInput.style.display = 'none';
+      state.isCustomMaterial = false;
+    }
+
     if (!selectedMachine || !selectedComponent || !selectedMaterialName) return;
+
+    // Handle regular material selection
+    if (state.isCustomComponent) {
+      // For custom components with regular materials, show size input
+      showSizeInput();
+      return;
+    }
 
     const materialList = state.machineComponentMap[selectedMachine][selectedComponent];
     const material = materialList.find(m => m.name === selectedMaterialName);
@@ -755,40 +871,105 @@ document.addEventListener('DOMContentLoaded', () => {
     state.allMaterials = [material.name];
     renderMaterialTable();
     elements.tableContainer.style.display = 'block';
-    elements.customMaterialContainer.style.display = 'block';
   };
 
-  const handleAddCustomMaterial = () => {
-    const newMaterial = elements.customMaterialInput.value.trim();
-    if (newMaterial && !state.allMaterials.includes(newMaterial)) {
-      state.allMaterials.push(newMaterial);
-      renderMaterialTable();
+  // Handle size changes - trigger process count selector for custom items
+  const handleSizeChange = () => {
+    // For custom items, check if we should show process count selector
+    if (state.isCustomComponent || state.isCustomMaterial) {
+      checkAndShowProcessCountSelector();
     }
-    elements.customMaterialInput.value = '';
   };
 
+  // Handle process count change
+  const handleProcessCountChange = () => {
+    const processCount = parseInt(elements.processCountSelect.value);
+    if (!processCount) return;
+    
+    // Update process data
+    const customProcessData = getCustomProcessData(processCount);
+    state.processIDs = customProcessData.processIDs;
+    state.processNames = customProcessData.processNames;
+    
+    // Get current material name
+    let materialName = 'Custom Material';
+    if (state.isCustomComponent) {
+      materialName = elements.customComponentInput.value.trim() || 'Custom Component';
+    } else if (state.isCustomMaterial) {
+      materialName = elements.customMaterialInput.value.trim() || 'Custom Material';
+    }
+    
+    state.allMaterials = [materialName];
+    renderMaterialTable();
+    elements.tableContainer.style.display = 'block';
+  };
+
+  // Handle custom material input changes
+  const handleCustomMaterialInput = () => {
+    if (state.isCustomMaterial) {
+      const customMaterialName = elements.customMaterialInput.value.trim();
+      if (customMaterialName && state.processIDs.length > 0) {
+        state.allMaterials = [customMaterialName];
+        renderMaterialTable();
+      }
+    }
+  };
+
+  // Handle custom component input changes
+  const handleCustomComponentInput = () => {
+    if (state.isCustomComponent) {
+      const customComponentName = elements.customComponentInput.value.trim();
+      if (customComponentName && state.processIDs.length > 0) {
+        state.allMaterials = [customComponentName];
+        renderMaterialTable();
+      }
+    }
+  };
+
+  // Handle draft add
   const handleDraftAdd = (e) => {
     e.preventDefault();
 
     const workOrder = elements.workOrderInput.value.trim();
     const machineName = elements.machineNameInput.value.trim();
     const machine = elements.machineSelect.value;
-    const component = elements.componentSelect.value;
-    const material = elements.materialSelect.value;
-    const size = elements.sizeSelect.value;
+    
+    // Handle component - custom or selected
+    let component = elements.componentSelect.value;
+    if (component === 'other') {
+      component = elements.customComponentInput.value.trim();
+      if (!component) {
+        return alert("Please enter a custom component name.");
+      }
+    }
+    
+    // Handle material - custom or selected
+    let material = elements.materialSelect.value;
+    if (material === 'other') {
+      material = elements.customMaterialInput.value.trim();
+      if (!material) {
+        return alert("Please enter a custom material name.");
+      }
+    }
+    
+    // Handle size - input field for custom, dropdown for predefined
+    let size = '';
+    if (state.isCustomComponent || state.isCustomMaterial) {
+      size = elements.sizeInput.value.trim();
+    } else {
+      size = elements.sizeSelect.value;
+    }
 
-    const materialItem = state.machineComponentMap[machine]?.[component]?.find(m => m.name === material);
-    if (!materialItem) return alert("Invalid material selected!");
-
+    // Get selected processes
     const processPath = Array.from(
-      document.querySelectorAll(`input[data-material="${material}"]:checked`)
+      document.querySelectorAll(`input[data-material="${state.allMaterials[0]}"]:checked`)
     ).map(cb => cb.value);
 
     if (!workOrder || !machineName || !machine || !component || !material || !size || processPath.length === 0) {
       return alert("Please fill all fields and assign processes before adding.");
     }
 
-    // Store process names with the draft item to avoid global reference issues
+    // Store process names with the draft item
     const processNamesForDraft = {};
     processPath.forEach(pid => {
       processNamesForDraft[pid] = state.processNames[pid] || pid;
@@ -804,21 +985,46 @@ document.addEventListener('DOMContentLoaded', () => {
       processPath,
       processNames: processNamesForDraft
     });
+    
     renderDraftPreview();
+    
+    // Reset form after adding to draft (keep work order, machine name, and department)
+    resetFormAfterDraft();
   };
 
+  // Handle form submit
   const handleFormSubmit = (e) => {
     e.preventDefault();
 
     const typedMachineName = elements.machineNameInput.value.trim();
     const workOrder = elements.workOrderInput.value.trim();
     const machine = elements.machineSelect.value;
-    const component = elements.componentSelect.value;
-    const material = elements.materialSelect.value;
-    const size = elements.sizeSelect.value;
+    
+    // Handle component - custom or selected
+    let component = elements.componentSelect.value;
+    if (component === 'other') {
+      component = elements.customComponentInput.value.trim();
+    }
+    
+    // Handle material - custom or selected
+    let material = elements.materialSelect.value;
+    if (material === 'other') {
+      material = elements.customMaterialInput.value.trim();
+    }
+    
+    // Handle size - input field for custom, dropdown for predefined
+    let size = '';
+    if (state.isCustomComponent || state.isCustomMaterial) {
+      size = elements.sizeInput.value.trim();
+      if (!size) {
+        return alert("Please enter a size.");
+      }
+    } else {
+      size = elements.sizeSelect.value;
+    }
+    
     const materialList = [...state.allMaterials];
 
-    // Prepare data to send to backend - FIXED: Process both draft and regular items
     const productionItemsToSend = [];
 
     // Add draft products (if any)
@@ -922,22 +1128,26 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Failed to save production data');
     });
 
-    // Reset form and UI
+    // Reset form and UI completely
     elements.trackerForm.reset();
     state.allMaterials = [];
     state.draftProducts = [];
+    state.isCustomComponent = false;
+    state.isCustomMaterial = false;
     elements.materialProcessTable.innerHTML = '';
     elements.tableContainer.style.display = 'none';
-    elements.customMaterialContainer.style.display = 'none';
     elements.materialSelect.style.display = 'none';
     elements.sizeSelect.style.display = 'none';
+    elements.sizeInput.style.display = 'none';
+    elements.customComponentInput.style.display = 'none';
+    elements.customMaterialInput.style.display = 'none';
+    elements.processCountSelect.style.display = 'none';
 
     renderDraftPreview();
     updateStepStatus();
     document.getElementById('step-submit')?.classList.add('active');
   };
 
-  // UPDATED: Handle process strip clicks with proper duration tracking and halt recording
   const handleProcessStripClick = (e) => {
     const id = e.target.dataset.id;
     if (!id) return;
@@ -945,36 +1155,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const item = state.products.find(p => p.id === id);
     if (!item) return;
 
-    // Store the currently expanded material before making changes
     const wasExpanded = state.currentlyOpenMaterial;
     const key = `${item.id}-${item.processIndex}`;
 
     if (e.target.classList.contains('toggle-btn')) {
       if (item.status === 'waiting') {
-        // Start process
         item.status = 'in-progress';
         item.startTime = new Date();
-        // Store in memory for real-time calculation
         state.processStartTimes[key] = item.startTime;
         
       } else if (item.status === 'in-progress') {
-        // Stop process
         item.status = 'stop';
         item.pauseTime = new Date();
         
-        // Calculate and store the in-process duration
         if (state.processStartTimes[key]) {
           item.inProcessDuration = item.pauseTime - state.processStartTimes[key];
         }
         
-        // Remove from active tracking
         delete state.processStartTimes[key];
       }
     }
 
     if (e.target.classList.contains('next-btn')) {
       if (item.status === 'stop') {
-        // NEW: Save halt duration record to database
         if (item.pauseTime) {
           const now = new Date();
           const haltDuration = now - item.pauseTime;
@@ -993,11 +1196,9 @@ document.addEventListener('DOMContentLoaded', () => {
             duration: haltDuration
           };
 
-          // Save to database
           saveHaltDurationRecord(haltRecord);
         }
 
-        // Move to next process
         if (item.processIndex < item.processPath.length - 1) {
           item.processIndex++;
           item.processId = item.processPath[item.processIndex];
@@ -1012,7 +1213,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Save status update to backend (PATCH)
+    // Save status update to backend
     fetch(`http://localhost:5000/api/production/${item.id}`, {
       method: 'PATCH',
       headers: {
@@ -1035,14 +1236,11 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(res => res.json())
     .then(data => {
       console.log(`✅ Updated item [${item.id}]`, data);
-      
-      // FIXED: Preserve expanded state before re-rendering
       state.currentlyOpenMaterial = wasExpanded;
       renderProcessStrips();
     })
     .catch(err => {
       console.error('❌ Error updating item:', err);
-      // FIXED: Still preserve state even on error
       state.currentlyOpenMaterial = wasExpanded;
       renderProcessStrips();
     });
@@ -1062,21 +1260,21 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.machineSelect.addEventListener('change', handleMachineChange);
     elements.componentSelect.addEventListener('change', handleComponentChange);
     elements.materialSelect.addEventListener('change', handleMaterialChange);
-    elements.addCustomMaterialBtn.addEventListener('click', handleAddCustomMaterial);
+    elements.sizeSelect.addEventListener('change', handleSizeChange);
+    elements.sizeInput.addEventListener('input', handleSizeChange);
+    elements.processCountSelect.addEventListener('change', handleProcessCountChange);
+    elements.customMaterialInput.addEventListener('input', handleCustomMaterialInput);
+    elements.customComponentInput.addEventListener('input', handleCustomComponentInput);
     elements.typeAddBtn.addEventListener('click', handleDraftAdd);
     elements.trackerForm.addEventListener('submit', handleFormSubmit);
     elements.processStripsContainer.addEventListener('click', handleProcessStripClick);
     elements.draftPreviewTable.addEventListener('click', handleDraftPreviewClick);
   };
 
-  // Placeholder for updateStepStatus function (not defined in original code)
   const updateStepStatus = () => {
-    // Implementation depends on your step tracking logic
     console.log('Step status updated');
   };
 
   // Initialize the application
   init();
-  
-  // Real-time duration updates removed - duration only shows when stopped
 });

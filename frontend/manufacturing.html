@@ -5,19 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Manufacturing</title>
   <link rel="icon" type="image/png" href="advance_hydrautech_pvt_ltd_logo.jpeg">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="manufacturing.css"/>
 </head>
 <body>
   <aside class="sidebar">
     <img src="download.jpeg" alt="logo">
     <ul>
-      <li><a href="index.html">📊 Dashboard</a></li>
-      <li><a href="manufacturing.html">🏭 Manufacturing</a></li>
-      <li><a href="inventory.html">📦 Inventory</a></li>
-      <li><a href="#">📈 Analytics</a></li>
-      <li><a href="#">📋 Reports</a></li>
-      <li><a href="user.html">👥 Users</a></li>
-      <li><a href="#">⚙️ Settings</a></li>
+      <li><a href="index.html"><i class="fa-solid fa-chart-simple"></i> Dashboard</a></li>
+      <li><a href="manufacturing.html"><i class="fa-solid fa-industry"></i> Manufacturing</a></li>
+      <li><a href="inventory.html"><i class="fa-solid fa-boxes-stacked"></i> Inventory</a></li>
+      <li><a href="#"><i class="fa-solid fa-chart-line"></i> Analytics</a></li>
+      <li><a href="reports.html"><i class="fa-solid fa-file-lines"></i> Reports</a></li>
+      <li><a href="user.html"><i class="fa-solid fa-users"></i> Users</a></li>
+      <li><a href="#"><i class="fa-solid fa-gear"></i> Settings</a></li>
     </ul>
   </aside>
 
@@ -42,22 +43,34 @@
           <option value="">Select Type</option>
         </select>
 
-        <button id="typeadd" type="button">+</button>
+        <!-- Custom component input (hidden initially) -->
+        <input type="text" id="customComponentInput" placeholder="Enter Custom Type" style="display: none;" />
 
         <select id="materialSelect" style="display: none;" required>
           <option value="">Select Component</option>
         </select>
 
+        <!-- Custom material input (hidden initially) -->
+        <input type="text" id="customMaterialInput" placeholder="Enter Custom Component" style="display: none;" />
+
+        <!-- Size field - will be input for custom, select for predefined -->
         <select id="sizeSelect" style="display: none;" required>
           <option value="">Select Size</option>
         </select>
+        <input type="text" id="sizeInput" placeholder="Enter Size" style="display: none;" />
+
+        <!-- Process count selector beside size field -->
+        <select id="processCountSelect" style="display: none;" required>
+          <option value="">Select Processes</option>
+          <option value="3">3 Processes</option>
+          <option value="4">4 Processes</option>
+          <option value="5">5 Processes</option>
+          <option value="6">6 Processes</option>
+        </select>
+
+        <button id="typeadd" type="button">+</button>
 
         <div id="bomMaterialsList" style="margin: 10px 0;"></div>
-
-        <div id="customMaterialContainer" style="display: none;">
-          <input type="text" id="customMaterial" placeholder="Enter Material">
-          <button type="button" id="addCustomMaterial">Add Material</button>
-        </div>
 
         <div id="materialProcessTableContainer" style="margin-top: 20px;">
           <table id="materialProcessTable">
